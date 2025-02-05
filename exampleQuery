@@ -1,0 +1,10 @@
+UPDATE TOP(10) pulltab_tickets
+SET win_amount		= (	SELECT win_amount
+						          FROM pulltab_tickets
+						          WHERE pulltab_id = 421031),
+	win_data_json	=   ( SELECT win_data_json
+						          FROM pulltab_tickets
+						          WHERE pulltab_id = 421031)
+FROM	pulltab_tickets 
+WHERE	gameset_id = 20 
+AND		has_been_played = 0 
