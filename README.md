@@ -1,2 +1,2 @@
-# SQLShowcase
-# Showcase advanced queries and expedited practices
+# SQLShowCase
+## Showcase advanced queries and expedited practices
