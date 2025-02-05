@@ -5,4 +5,4 @@ This repository provides examples of data analysis I've worked on in both, a pro
 <br>
 |Column1|Column2|
 |----|----|
-||[test link](https://www.google.com/)|
+||[google test link](https://www.google.com/)|
