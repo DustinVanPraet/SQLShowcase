@@ -358,7 +358,7 @@ Targeted issues to solve:
 - It doesn't expedite and solve the initial issue when requested multipliers are 10x, 1x, 5x, and 50x in that specific order. 
 - Accidentally inserting the wrong gameset_id can put the turns on another gameset and cause a forced crash resulting in a loss of resources chasing a one time, non existent bug.
 - Some turns can win on the same multiplier over 100,000 different ways. Win_data_json determines how the solving will play out but our previous attempts uses the same win_data_json for every turn.
-<br>
+
 Amended issues solved post functional:
 - It doesn't run a check on errors if the win_amount doesn't exist within a gameset.
 - If the DB needs to activate a gameset, it tells the next gameset that needs to be activated. 
