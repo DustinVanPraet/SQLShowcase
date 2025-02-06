@@ -343,11 +343,13 @@ END;
 <br>
 
 #### Input:
-<br>
+
 
 `````sql
+
 --Input the game.name, denomination, and up to 12 multipliers of choice. 
 EXEC QueueMultiplier 'FLAMINJOKEROH', 1, 10, 1, 5, 50
+
 `````
 
 
