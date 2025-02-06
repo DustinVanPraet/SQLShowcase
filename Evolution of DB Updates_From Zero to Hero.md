@@ -165,9 +165,7 @@ Unfortunately, the following are still additional issues that aren't solved with
 With this starting foundation, I decided to dig deeper. In order to solve all of the issues listed above as several others, the following Stored Procedure was created:
 <br>
 #### Input:
-<br>
-
-```sql
+`````sql
 CREATE PROCEDURE QueueMultiplier
 			@gameName	VARCHAR(50), 
 			@denom		DECIMAL(18,2),
@@ -339,16 +337,16 @@ DROP TABLE	#TEMPDB
 DROP TABLE	#WinAmounts
 
 END;
-```
+`````
 <br>
 
 #### Input:
 <br>
 
-```sql
+`````sql
 --Input the game.name, denomination, and up to 12 multipliers of choice. 
 EXEC QueueMultiplier 'FLAMINJOKEROH', 1, 10, 1, 5, 50
-```
+`````
 
 
 
