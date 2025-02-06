@@ -310,7 +310,8 @@ WHILE	(@counter <= @MaxCounter)
 						AND	game_form_id = (SELECT	TOP(1)game_form_id
 									FROM	gameset
 									WHERE	gameset_id = @gameset)
-									ORDER BY NEWID()),  --NEWID() orders the results randomly to increase the variety of the turns that are being tested and the TOP(1) is selected.
+									ORDER BY NEWID()),
+--NEWID() orders the results randomly to increase the variety of the turns that are being tested and the TOP(1) is selected.
 				win_amount	=(SELECT TOP(1) win_amount
 						FROM	pulltab_tickets
 						JOIN	gameset on pulltab_tickets.gameset_id = gameset.gameset_id
