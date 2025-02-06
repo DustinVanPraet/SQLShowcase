@@ -337,9 +337,12 @@ DROP TABLE	#WinAmounts
 
 END;
 ```
-#### Input: 
+<br>
+#### Input:
+<br>
+
 ```sql
--- Input the game.name, denomination, and up to 12 multipliers of choice. 
+--Input the game.name, denomination, and up to 12 multipliers of choice. 
 EXEC QueueMultiplier 'FLAMINJOKEROH', 1, 10, 1, 5, 50
 ```
 
