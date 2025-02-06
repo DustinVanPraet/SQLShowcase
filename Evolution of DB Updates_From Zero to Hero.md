@@ -133,10 +133,11 @@ This query does same UPDATE as the previous except that it does a few processes 
 Figuring out a faster way to fulfill requests felt great but it wasn't enough. I wanted a way to put more power into the hands of QA when they don't fully understand how SQL and the database works. This would allow them to queue up their own requests with minimal difficulty. I started looking into Stored Procedures and Variables.
 #### Input:
 ```sql
-Create Procedure	QueueTicketWinAmount
-			@gamesetID	int,
-			@win_amount	int,
-			@numberOfTurns int
+--Input gameset_id for the game, the win_amount(not multiplier), and the # of times you want the turn queued up. 
+Create Procedure QueueTicketWinAmount
+		@gamesetID	INT,
+		@win_amount	DECIMAL(18,2),
+		@numberOfTurns  INT
 AS
 UPDATE 	TOP(@numberOfTurns) pulltab_tickets
 SET 	win_amount	=(SELECT	TOP(1)  pulltab_tickets.win_amount
@@ -147,6 +148,213 @@ SET 	win_amount	=(SELECT	TOP(1)  pulltab_tickets.win_amount
 					WHERE	gameset_id = @gamesetID and win_amount = @win_amount)
 FROM pulltab_tickets
 WHERE gameset_id = @gamesetID and has_been_played = 0
+```
+This was my first attempt at simplifying and expediting the UPDATE process. This would eliminate the need to look up a win_amount and copying over the pulltab_id from the desired multiplier. The user would only have to execute a stored procedure. 
+#### Input:
+```sql
+-- Input variables for gameset_id, win_amount desired, and # of times the turn repeats. 
+EXEC QueueTicketWinAmount 1482, 10.00, 5
+```
+Unfortunately, the following are still additional issues that aren't solved with this Stored Proc:
+- It didn't eliminate the need to look up the gameset_id using the active gamesets query. 
+- It doesn't expedite and solve the initial issue when requested multipliers are 10x, 1x, 5x, and 50x in that specific order. 
+- It also doesn't run a check on errors if the win_amount doesn't exist within a gameset.
+- Accidentally inserting the wrong gameset_id can put the turns on another gameset and cause a forced crash resulting in a loss of resources chasing a one time, non existent bug.
+- Some turns can win on the same multiplier over 100,000 different ways. Win_data_json determines how the solving will play out but our previous attempts uses the same win_data_json for every turn
+<br>
+With this starting foundation, I decided to dig deeper. In order to solve all of the issues listed above as several others, the following Stored Procedure was created:
+<br>
+#### Input:
+```sql
+CREATE PROCEDURE QueueMultiplier
+			@gameName	VARCHAR(50), 
+			@denom		DECIMAL(18,2),
+			@1stWin		DECIMAL(18,2),
+			@2ndWin		DECIMAL(18,2) = NULL,
+			@3rdWin		DECIMAL(18,2) = NULL,
+			@4thWin		DECIMAL(18,2) = NULL,
+			@5thWin		DECIMAL(18,2) = NULL,
+			@6thWin		DECIMAL(18,2) = NULL,
+			@7thWin		DECIMAL(18,2) = NULL,
+			@8thWin		DECIMAL(18,2) = NULL,
+			@9thWin		DECIMAL(18,2) = NULL,
+			@10thWin	DECIMAL(18,2) = NULL,
+			@11thWin	DECIMAL(18,2) = NULL,
+			@12thWin	DECIMAL(18,2) = NULL
+
+AS
+BEGIN
+-- DECLARE/SET VARIABLES AND SETTINGS
+DECLARE		@counter		INT;
+DECLARE		@MaxCounter		INT;
+DECLARE		@gameset		INT;
+DECLARE		@rollingWin		DECIMAL(18,2);
+DECLARE		@nextGameset		INT;
+
+SET			NOCOUNT		ON;
+SET			@counter	= 1;
+SET			@gameset	=(SELECT	top(1)gameset_id
+				  	FROM		gameset
+ 					JOIN		game_form ON game_form.form_id = gameset.game_form_id
+					JOIN		game ON game.game_id = game_form.game_id
+					WHERE		gameset.is_active = 1
+					AND		game.name = @gameName
+					AND		game_form.denomination = @denom);
+SET			@nextGameset 	=(SELECT	TOP(1)	gameset_id
+							FROM	gameset
+							WHERE	game_form_id = (SELECT	game_form_id
+										FROM	gameset
+										WHERE	gameset_id = @gameset)
+							AND	is_active = 0
+							AND	is_terminated = 0);
+-- Check for #Tables and drop if it exist
+DROP TABLE	
+IF EXISTS #TEMPDB
+DROP TABLE	
+IF EXISTS #WinAmounts
+
+--Create table with desired win_amounts to pull from
+DECLARE @WinAmounts TABLE
+(
+    ID INT IDENTITY(1,1) PRIMARY KEY,
+    AMOUNT DECIMAL(18,2)
+);
+--These are the input variables used for selecting multipliers. To further reduce user error, only the multiplier needs to be input. The $1.00 denomination is simple because an 18x multiplier is a 18.00 win_amount
+--A $0.25 or $3.00 denomination is where user error would most likely come into play if math doesn't come out to win_amount = 4.50 or 54.00. 
+INSERT INTO @WinAmounts (AMOUNT) VALUES ((@1stWin)*(@denom)),((@2ndwin)*(@denom)),((@3rdWin)*(@denom)),((@4thWin)*(@denom)),
+					((@5thWin)*(@denom)),((@6thWin)*(@denom)),((@7thWin)*(@denom)),((@8thWin)*(@denom)),
+					((@9thWin)*(@denom)),((@10thWin)*(@denom)),((@11thWin)*(@denom)),((@12thWin)*(@denom));
+
+SET			@MaxCounter	= (SELECT MAX(ID) FROM @WinAmounts)
+
+--Debug check for gameset_id being used. 
+--This is done and printed in messages to mitigate risk and allow the user to see the gameset_id that was found for the UPDATE. 
+PRINT 'Using Gameset ' + CAST(@gameset AS VARCHAR(10));
+
+-- Turn off random tickets
+-- This is a feature done in the field but is turned off to test on a live environment. 
+UPDATE	global_vars
+SET	variable_value = 0
+WHERE	variable_key = 'use_commingling'
+
+-- Create Temporary RowNumber Table
+SELECT 
+	ROW_NUMBER() OVER (ORDER BY pulltab_id) AS RowNumber,
+	pulltab_tickets.pulltab_id,
+	pulltab_tickets.win_amount,
+	pulltab_tickets.win_data_json
+INTO	#TEMPDB
+FROM	pulltab_tickets
+JOIN	gameset ON pulltab_tickets.gameset_id = gameset.gameset_id
+JOIN	game_form ON game_form.form_id = gameset.game_form_id
+JOIN	game ON game.game_id = game_form.game_id
+
+WHERE	game.name = @gameName
+AND	game_form.denomination = @denom
+AND	has_been_played = 0
+AND	game_form.is_active = 1
+AND	gameset.is_active = 1
+
+--Increment counter/RowNumber and update next turn to be played
+WHILE	(@counter <= @MaxCounter)
+	BEGIN
+		SELECT @rollingWin = AMOUNT 
+		FROM @WinAmounts 
+		WHERE ID = @counter
+--Check for win_amount EXISTS, RAISEERROR, find next gameset for activation and execution stops
+--Display messages for debugging
+		IF	
+			EXISTS	(SELECT		win_data_json
+				FROM		pulltab_tickets
+				JOIN		gameset on pulltab_tickets.gameset_id = gameset.gameset_id
+				WHERE		win_amount = @rollingWin
+				AND		game_form_id = (SELECT	game_form_id
+								FROM	gameset
+								WHERE	gameset_id = @gameset))
+				BEGIN
+					DECLARE @NoErrorMessage NVARCHAR(4000) = 
+					'Selected win amount of '+CAST(@rollingWin AS VARCHAR(10)) + ' was found';
+					PRINT @NoErrorMessage;
+				END
+		ELSE 	
+			IF 
+				NOT EXISTS	(SELECT		win_data_json
+						FROM		pulltab_tickets
+						JOIN		gameset on pulltab_tickets.gameset_id = gameset.gameset_id
+						WHERE		win_amount = @rollingWin
+						AND		game_form_id = (SELECT	game_form_id
+										FROM	gameset
+										WHERE	gameset_id = @gameset))
+				BEGIN
+					DECLARE @ErrorMessage NVARCHAR(4000) = 
+					'ERROR: No win amount found for $'+CAST(@rollingWin AS VARCHAR(10)) + ' in Gameset '+CAST(@gameset AS VARCHAR(10)) +' or related game_form. '
+					+ CHAR(13) +'Win amount does not exist or win amounts have been overwritten.'
+					+ CHAR(13) +'Next gameset_id for $'+CAST(@denom AS VARCHAR(10)) + ' ' + UPPER(@gameName) + ' is ' + CAST(@nextGameset AS VARCHAR(10));
+	--Display updated wins that queued before ERROR
+					SELECT	*
+					FROM	pulltab_tickets
+					WHERE	gameset_id = @gameset
+					AND		has_been_played = 0;
+					PRINT	@ErrorMessage;
+					RETURN;
+				END;
+		
+--Pull/Update win_data_json and win_amount from a random ticket with that win_amount and game_form_id
+		UPDATE  pulltab_tickets
+		SET		win_data_json	=(SELECT TOP(1) win_data_json
+						FROM	pulltab_tickets
+						JOIN	gameset on pulltab_tickets.gameset_id = gameset.gameset_id
+						WHERE	win_amount = @rollingWin
+						AND	game_form_id = (SELECT	TOP(1)game_form_id
+									FROM	gameset
+									WHERE	gameset_id = @gameset)
+									ORDER BY NEWID()),  --NEWID() orders the results randomly to increase the variety of the turns that are being tested and the TOP(1) is selected.
+				win_amount	=(SELECT TOP(1) win_amount
+						FROM	pulltab_tickets
+						JOIN	gameset on pulltab_tickets.gameset_id = gameset.gameset_id
+						WHERE	win_amount = @rollingWin
+						AND	game_form_id = (SELECT	TOP(1)game_form_id
+									FROM	gameset
+									WHERE	gameset_id = @gameset)
+									ORDER BY NEWID())
+		FROM	pulltab_tickets 
+		WHERE	pulltab_id =(	SELECT pulltab_id
+					FROM	#TEMPDB
+					WHERE	RowNumber = @counter
+					AND	has_been_played = 0)
+
+	SET	@counter = @counter + 1
+	END
+--VIEW GAMESET AFTER UPDATES
+SELECT	*
+FROM	pulltab_tickets
+WHERE	gameset_id = @gameset
+AND	has_been_played = 0
+
+--DROP TEMP TABLE TO REMOVE FUTURE ERRORS
+DROP TABLE	#TEMPDB
+DROP TABLE	#WinAmounts
+
+END;
+```
+#### Input: 
+```sql
+-- Input the game.name, denomination, and up to 12 multipliers of choice. 
+EXEC QueueMultiplier 'FLAMINJOKEROH', 1, 10, 1, 5, 50
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
