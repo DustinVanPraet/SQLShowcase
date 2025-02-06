@@ -17,7 +17,7 @@ Below is an Entity Relationship Diagram displaying some tables within the DB:
 In the image you can see 4 tables. These are not all of the tables but they are the main tables focused on for QA testing. A simple explaination would be that a game can have many game_forms(game_forms are like bet amounts ie $2.00, $1.00, $0.50 etc.), a game_form can have many gamesets, and gameset can have many tickets. 
 
 ### Scenario:
-In this example, a member of the QA team is requesting a specific order of turns for testing. They want to test the different multipliers and how they react when played in that specific order. The QA member asks for a 10x, 2x, 40x, 0x, and 100x for FLAMINJOKEROH on the $1.00 denomination in that specific order. 
+In this example, a member of the QA team is requesting a specific order of turns for testing. They want to test the different multipliers and how they react when played in that specific order. The QA member asks for a 10x, 1x, 5x, and 50x turn for FLAMINJOKEROH on the $1.00 denomination in that specific order.  
 
 #### Input:
 ```sql
@@ -72,15 +72,58 @@ AND	has_been_played = 0
 #### Output:
 ![HasBeenPlayedOutput](https://github.com/user-attachments/assets/8cd825bf-e14e-43df-b154-e23da951f8e7)
 <br>
+Now we have pulltab_id for the next ticket to be played and an UPDATE can be made for the first requested turn. We will re-run the SELECT statement alongside the UPDATE to view the changes to pulltab_id = 34774001
+<br>
+#### Input:
+```sql
+UPDATE 	pulltab_tickets
+SET 	win_amount = 10,
+	win_data_json = '[{"IconData":[1,12,12,12,2,12,7,4,4],"BonusData":[],"WinAmount":0.0,"BonusWinData":[]}]'
+WHERE	pulltab_id = 34774001
 
+SELECT 	*
+FROM	pulltab_tickets
+WHERE 	gameset_id = 1482
+AND 	has_been_played = 0
+```
+#### Output:
+![UpdatePulltabTicketOutput](https://github.com/user-attachments/assets/adbf3163-bf85-46b4-8cb5-d1ca788db34b)
+<br>
+This process would be repeated for each individual multiplier requested. If the same multiplier was requested repeatedly such as a 10x turn 5 times then it may have be written as: 
+<br>
+#### Input:
+```sql
+UPDATE 	pulltab_tickets
+SET 	win_amount = 10,
+	win_data_json = '[{"IconData":[1,12,12,12,2,12,7,4,4],"BonusData":[],"WinAmount":0.0,"BonusWinData":[]}]'
+WHERE	pulltab_id BETWEEN 34774001 AND 34774005
 
+SELECT 	*
+FROM	pulltab_tickets
+WHERE 	gameset_id = 1482
+AND 	has_been_played = 0
+```
+This would UPDATE all 5 tickets BETWEEN pulltab_id 34774001 AND 34774005 but this would allow testing to continue while the UPDATE is being made due to the query not changing on the fly while running the UPDATE. I never wanted to impede on others testing and work. I didn't want to be the reason slowing them down anymore than necessary. 
+<br>
+#### Input:
+```sql
+UPDATE TOP(5) pulltab_tickets
+SET 	win_amount	= (SELECT win_amount
+			   FROM pulltab_tickets
+			   WHERE pulltab_id = 34783533),
+	win_data_json	= (SELECT win_data_json
+			   FROM pulltab_tickets
+			   WHERE pulltab_id = 34783533)
+FROM	pulltab_tickets 
+WHERE	gameset_id = 1482 
+AND	has_been_played = 0 
 
-
-
-
-
-
-
+SELECT	*
+FROM	pulltab_tickets
+WHERE	gameset_id = 1482
+AND	has_been_played = 0
+```
+This query does same UPDATE as the previous except that it runs an additional check for the has_been_played = 0 and starts the UPDATE at the first 0 value. If the next ticket to be played was 1,500 tickets later, it would know to start the UPDATE at 34785033 allowing QA to continue testing without a need to wait between requests. 
 
 
 
