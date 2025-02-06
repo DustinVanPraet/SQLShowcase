@@ -49,7 +49,7 @@ GROUP BY	gameset.gameset_id,
 ![ActiveGamesetsOutput2](https://github.com/user-attachments/assets/8348aa62-939b-47f8-9c1a-d2048eeec0e6)
 <br>
 The database analyst would then manually search for the gameset_id that aligned with the denomination and name that they were looking for. This would be gameset_id 1482.
-The next step would be to search for a win_amount containing 10x for $1.00 denomination which would be 10.00. The next query would be written to find this information:
+The next step would be to search for a win_amount containing 10x for $1.00 denomination which would be 10.00. The next query would be written to find this information.
 <br>
 #### Input:
 ```sql
