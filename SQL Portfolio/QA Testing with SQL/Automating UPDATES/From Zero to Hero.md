@@ -1,10 +1,3 @@
-## Improving the SELECT/UPDATE processes in the database to improve testing practices
-
-*Disclaimer:* *All turns, pools, and payouts displayed in this project do not accurately reflect the games as played in the field in any way and these are simply used to showcase SQL skills for Quality Assurance testing purposes.* 
-
-
-### This will show the growth and changes that were made and how the position has become more efficient. The 1st part of this will display some spruced up versions of how we initially shown to assist the QA team. The 2nd part will show the ways that SQL queries became more complex but overall faster reducing QA wait times by more than 80%. 
-
 Within the gambling industry for casino slot machine games, all states have different regualtions and requirements. Some of these states require a record of every turn played by every machine and this is recorded in a SQL server database for each individual location which may have many different machines that can play many different games. 
 <br>
 <br>
