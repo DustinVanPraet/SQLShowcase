@@ -165,6 +165,8 @@ Unfortunately, the following are still additional issues that aren't solved with
 With this starting foundation, I decided to dig deeper. In order to solve all of the issues listed above as several others, the following Stored Procedure was created:
 <br>
 #### Input:
+<br>
+
 ```sql
 CREATE PROCEDURE QueueMultiplier
 			@gameName	VARCHAR(50), 
