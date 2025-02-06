@@ -158,14 +158,14 @@ This was my first attempt at simplifying and expediting the UPDATE process. This
 -- Input variables for gameset_id, win_amount desired, and # of times the turn repeats. 
 EXEC QueueTicketWinAmount 1482, 10.00, 5
 ```
-Unfortunately, the following are still additional issues that aren't solved with this Stored Proc:
+**Unfortunately, the following are still additional issues that aren't solved with this Stored Procedure**
 - It didn't eliminate the need to look up the gameset_id using the active gamesets query. 
 - It doesn't expedite and solve the initial issue when requested multipliers are 10x, 1x, 5x, and 50x in that specific order. 
 - It also doesn't run a check on errors if the win_amount doesn't exist within a gameset.
 - Accidentally inserting the wrong gameset_id can put the turns on another gameset and cause a forced crash resulting in a loss of resources chasing a one time, non existent bug.
 - Some turns can win on the same multiplier over 100,000 different ways. Win_data_json determines how the solving will play out but our previous attempts uses the same win_data_json for every turn.
 <br>
-With this starting foundation, I decided to dig deeper. In order to solve all of the issues listed above as several others, the following Stored Procedure was created:
+With this starting foundation, I decided to dig deeper. In order to solve all of the issues listed above as several others, the following Stored Procedure was created. Several comments are included in the Stored Procedure explaining different areas of the script. 
 <br>
 
 #### Input:
@@ -224,7 +224,8 @@ DECLARE @WinAmounts TABLE
     ID INT IDENTITY(1,1) PRIMARY KEY,
     AMOUNT DECIMAL(18,2)
 );
---These are the input variables used for selecting multipliers. To further reduce user error, only the multiplier needs to be input. The $1.00 denomination is simple because an 18x multiplier is a 18.00 win_amount
+--These are the input variables used for selecting multipliers. To further reduce user error, only the multiplier needs to be input.
+--The $1.00 denomination is simple because an 18x multiplier is a 18.00 win_amount
 --A $0.25 or $3.00 denomination is where user error would most likely come into play if math doesn't come out to win_amount = 4.50 or 54.00. 
 INSERT INTO @WinAmounts (AMOUNT) VALUES ((@1stWin)*(@denom)),((@2ndwin)*(@denom)),((@3rdWin)*(@denom)),((@4thWin)*(@denom)),
 					((@5thWin)*(@denom)),((@6thWin)*(@denom)),((@7thWin)*(@denom)),((@8thWin)*(@denom)),
@@ -292,44 +293,45 @@ WHILE	(@counter <= @MaxCounter)
 										WHERE	gameset_id = @gameset))
 				BEGIN
 					DECLARE @ErrorMessage NVARCHAR(4000) = 
-					'ERROR: No win amount found for $'+CAST(@rollingWin AS VARCHAR(10)) + ' in Gameset '+CAST(@gameset AS VARCHAR(10)) +' or related game_form. '
-					+ CHAR(13) +'Win amount does not exist or win amounts have been overwritten.'
-					+ CHAR(13) +'Next gameset_id for $'+CAST(@denom AS VARCHAR(10)) + ' ' + UPPER(@gameName) + ' is ' + CAST(@nextGameset AS VARCHAR(10));
+					'ERROR: No win amount found for $' + CAST(@rollingWin AS VARCHAR(10)) + ' in Gameset '+ CAST(@gameset AS VARCHAR(10)) + ' or related game_form. '
+					+ CHAR(13) + 'Win amount does not exist or win amounts have been overwritten.'
+					+ CHAR(13) + 'Next gameset_id for $' + CAST(@denom AS VARCHAR(10)) + ' ' + UPPER(@gameName) + ' is ' + CAST(@nextGameset AS VARCHAR(10));
 	--Display updated wins that queued before ERROR
 					SELECT	*
 					FROM	pulltab_tickets
 					WHERE	gameset_id = @gameset
-					AND		has_been_played = 0;
+					AND	has_been_played = 0;
 					PRINT	@ErrorMessage;
 					RETURN;
 				END;
 		
 --Pull/Update win_data_json and win_amount from a random ticket with that win_amount and game_form_id
 		UPDATE  pulltab_tickets
-		SET		win_data_json	=(SELECT TOP(1) win_data_json
-						FROM	pulltab_tickets
-						JOIN	gameset on pulltab_tickets.gameset_id = gameset.gameset_id
-						WHERE	win_amount = @rollingWin
-						AND	game_form_id = (SELECT	TOP(1)game_form_id
-									FROM	gameset
-									WHERE	gameset_id = @gameset)
-									ORDER BY NEWID()),
+		SET	win_data_json	=(SELECT TOP(1) win_data_json
+					FROM	pulltab_tickets
+					JOIN	gameset on pulltab_tickets.gameset_id = gameset.gameset_id
+					WHERE	win_amount = @rollingWin
+					AND	game_form_id = (SELECT	TOP(1)game_form_id
+								FROM	gameset
+								WHERE	gameset_id = @gameset)
+								ORDER BY NEWID()),
 --NEWID() orders the results randomly to increase the variety of the turns that are being tested and the TOP(1) is selected.
-				win_amount	=(SELECT TOP(1) win_amount
-						FROM	pulltab_tickets
-						JOIN	gameset on pulltab_tickets.gameset_id = gameset.gameset_id
-						WHERE	win_amount = @rollingWin
-						AND	game_form_id = (SELECT	TOP(1)game_form_id
-									FROM	gameset
-									WHERE	gameset_id = @gameset)
-									ORDER BY NEWID())
+			win_amount	=(SELECT TOP(1) win_amount
+					FROM	pulltab_tickets
+					JOIN	gameset on pulltab_tickets.gameset_id = gameset.gameset_id
+					WHERE	win_amount = @rollingWin
+					AND	game_form_id = (SELECT	TOP(1)game_form_id
+								FROM	gameset
+								WHERE	gameset_id = @gameset)
+								ORDER BY NEWID())
 		FROM	pulltab_tickets 
 		WHERE	pulltab_id =(	SELECT pulltab_id
 					FROM	#TEMPDB
 					WHERE	RowNumber = @counter
 					AND	has_been_played = 0)
-
-	SET	@counter = @counter + 1
+--The selected win_amounts have been placed into a temp table created from the @WinAmounts table. We use @counter to increment and
+--cycle to the next selected variable win_amount in the temp table. 
+	SET	@counter = @counter + 1 
 	END
 --VIEW GAMESET AFTER UPDATES
 SELECT	*
@@ -348,12 +350,12 @@ END;
 #### Input:
 
 
-`````sql
+```sql
 
 --Input the game.name, denomination, and up to 12 multipliers of choice. 
 EXEC QueueMultiplier 'FLAMINJOKEROH', 1, 10, 1, 5, 50
 
-`````
+```
 With this previous and finalized SQL script, all of our previous issues listed are solved.  
 <br>
 Targeted issues to solve:
