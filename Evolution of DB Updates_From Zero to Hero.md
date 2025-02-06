@@ -21,6 +21,7 @@ In this example, a member of the QA team is requesting a specific order of turns
 
 #### Input:
 ```sql
+--Return all currently active gamesets that are available on terminals with their game.name and denomination. 
 SELECT  gameset.gameset_id,
 	gameset.current_tickets_played,
 	gameset.game_form_id,
@@ -44,7 +45,7 @@ GROUP BY	gameset.gameset_id,
 		game_form.denomination,
 		game.name
 ```
-#### Output
+#### Output:
 ![ActiveGamesetsOutput2](https://github.com/user-attachments/assets/8348aa62-939b-47f8-9c1a-d2048eeec0e6)
 <br>
 The database analyst would then manually search for the gameset_id that aligned with the denomination and name that they were looking for. This would be gameset_id 1482.
@@ -107,7 +108,9 @@ This would UPDATE all 5 tickets BETWEEN pulltab_id 34774001 AND 34774005 but thi
 <br>
 #### Input:
 ```sql
+--Change the TOP number if more than 5 tickets are needed for testing.
 UPDATE TOP(5) pulltab_tickets
+--Nested SELECT statements to directly copy cell data over to another record. 
 SET 	win_amount	= (SELECT win_amount
 			   FROM pulltab_tickets
 			   WHERE pulltab_id = 34783533),
@@ -118,12 +121,40 @@ FROM	pulltab_tickets
 WHERE	gameset_id = 1482 
 AND	has_been_played = 0 
 
+--Return the recently UPDATED gameset to verify that the turns have been changed. 
 SELECT	*
 FROM	pulltab_tickets
 WHERE	gameset_id = 1482
 AND	has_been_played = 0
 ```
-This query does same UPDATE as the previous except that it runs an additional check for the has_been_played = 0 and starts the UPDATE at the first 0 value. If the next ticket to be played was 1,500 tickets later, it would know to start the UPDATE at 34785033 allowing QA to continue testing without a need to wait between requests. 
+This query does same UPDATE as the previous except that it does a few processes better. It runs check for the has_been_played = 0 and starts the UPDATE at the first 0 value. If the next ticket to be played was 1,500 tickets later, it would know to start the UPDATE at 34775501 allowing QA to continue testing without a need to wait between requests. It also has a nested SELECT statement that pulls the win_amount and win_data_json over from the selected pulltab_id. This is safer since it eliminates user error that could occur from manually copying and pasting. Some win_data_json can get to a LEN of 1,000 or more depending on the turn. 
+<br>
+<br>
+Figuring out a faster way to fulfill requests felt great but it wasn't enough. I wanted a way to put more power into the hands of QA when they don't fully understand how SQL and the database works. This would allow them to queue up their own requests with minimal difficulty. I started looking into Stored Procedures and Variables.
+#### Input:
+```sql
+Create Procedure	QueueTicketWinAmount
+			@gamesetID	int,
+			@win_amount	int,
+			@numberOfTurns int
+AS
+UPDATE 	TOP(@numberOfTurns) pulltab_tickets
+SET 	win_amount	=(SELECT	TOP(1)  pulltab_tickets.win_amount
+					FROM	pulltab_tickets
+					WHERE	gameset_id = @gamesetID and win_amount = @win_amount),	
+	win_data_json	=(SELECT	TOP(1)  pulltab_tickets.win_data_json
+					FROM	pulltab_tickets
+					WHERE	gameset_id = @gamesetID and win_amount = @win_amount)
+FROM pulltab_tickets
+WHERE gameset_id = @gamesetID and has_been_played = 0
+
+
+
+
+
+
+
+
 
 
 
