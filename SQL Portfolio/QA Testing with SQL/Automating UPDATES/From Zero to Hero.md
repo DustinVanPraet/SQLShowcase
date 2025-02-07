@@ -1,3 +1,5 @@
+### This project shows the growth and changes that were made in the position, as well as myself to become more efficient.  
+
 The 1st part of this will display some spruced up versions of how we initially shown to assist the QA team. The 2nd part will show the ways that SQL queries became more complex but overall faster reducing QA wait times by more than 80%. Within the gambling industry for casino slot machine games, all states have different regualtions and requirements. Some of these states require a record of every turn played by every machine and this is recorded in a SQL server database for each individual location which may have many different machines that can play many different games. 
 <br>
 <br>
@@ -151,7 +153,7 @@ This was my first attempt at simplifying and expediting the UPDATE process. This
 -- Input variables for gameset_id, win_amount desired, and # of times the turn repeats. 
 EXEC QueueTicketWinAmount 1482, 10.00, 5
 ```
-**Unfortunately, the following are still additional issues that aren't solved with this Stored Procedure**
+**Unfortunately, the following are still issues that aren't solved with this Stored Procedure**
 - It didn't eliminate the need to look up the gameset_id using the active gamesets query. 
 - It doesn't expedite and solve the initial issue when requested multipliers are 10x, 1x, 5x, and 50x in that specific order. 
 - It also doesn't run a check on errors if the win_amount doesn't exist within a gameset.
