@@ -156,7 +156,6 @@ EXEC QueueTicketWinAmount 1482, 10.00, 5
 - It doesn't expedite and solve the initial issue when requested multipliers are 10x, 1x, 5x, and 50x in that specific order. 
 - It also doesn't run a check on errors if the win_amount doesn't exist within a gameset.
 - Accidentally inserting the wrong gameset_id can put the turns on another gameset and cause a forced crash resulting in a loss of resources chasing a one time, non existent bug.
-- Some turns can win on the same multiplier over 100,000 different ways. Win_data_json determines how the solving will play out but our previous attempts uses the same win_data_json for every turn.
 <br>
 With this starting foundation, I decided to dig deeper. In order to solve all of the issues listed above as several others, the following Stored Procedure was created. Several comments are included in the Stored Procedure explaining different areas of the script. 
 <br>
@@ -349,18 +348,19 @@ END;
 EXEC QueueMultiplier 'FLAMINJOKEROH', 1, 10, 1, 5, 50
 
 ```
-With this previous and finalized SQL script, all of our previous issues listed are solved.  
+With this previous and finalized SQL script, all of our previous issues listed are solved.
 <br>
-Targeted issues to solve:
-- It didn't eliminate the need to look up the gameset_id using the active gamesets query. 
-- It doesn't expedite and solve the initial issue when requested multipliers are 10x, 1x, 5x, and 50x in that specific order. 
-- Accidentally inserting the wrong gameset_id can put the turns on another gameset and cause a forced crash resulting in a loss of resources chasing a one time, non existent bug.
-- Some turns can win on the same multiplier over 100,000 different ways. Win_data_json determines how the solving will play out but our previous attempts uses the same win_data_json for every turn.
+#### Targeted issues to solve:
+- Putting more power into the hands of QA to improve their own testing buy simplifying the entire process into a EXEC Stored Procedure. 
+- Eliminate the need to look up the gameset_id using the active gamesets query. 
+- Expedite and solve the initial issue when requested multipliers are 10x, 1x, 5x, and 50x in that specific order. 
+- Inserting the wrong gameset_id can no longer occur since it's game name so all changes will be on the correct game and denomination that was input.
+- Eliminates critical bug crashes from user error resulting in a loss of resources chasing a one time, non existent bug.
 
-Amended issues solved post functional:
-- It doesn't run a check on errors if the win_amount doesn't exist within a gameset.
-- If the DB needs to activate a gameset, it tells the next gameset available to be activated. 
-
+#### Amended issues solved post functional:
+- If the DB needs to activate a gameset, it tells the next gameset available to be activated.
+- If the user inputs the wrong multiplier, an error message returns letting them know which ones were or were not found.
+- Using NEWID() will randomize all tickets that meet the criteria and then pick one resulting in more variety for testing. Some turns can win on the same multiplier over 100,000 different ways. This new method no longer uses the same win_data_json for every turn.
 
 
 
