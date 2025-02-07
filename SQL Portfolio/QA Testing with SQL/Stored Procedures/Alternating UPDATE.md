@@ -89,5 +89,4 @@ WHERE	gameset_id = @gamesetID
 AND		has_been_played = 0
 ```
 #### Output:
-![AltTurnsAfterOutput](https://github.com/user-attachments/assets/91bcd9ac-5b1c-4154-9e06-c6caf193afa3)
-
+![AltTurnsAfterOutput](https://github.com/user-attachments/assets/50d7cfc7-d96d-4df8-8d2f-6a5a9e90521e)
