@@ -1,4 +1,4 @@
-#### During QA Testing, some bugs/issues can come from two turns being played in tandem. So it's safe practice to test the previous event as well as the expected crash event. In order to #### reproduce the bug/issue, this query takes two specific turns using their serial numbers provided in the debug logs. It when then UPDATE the database to alternate between the two provided turns. 
+#### During QA Testing, some bugs/issues can come from two turns being played in tandem. So it's safe practice to test the previous event as well as the expected crash event. In order to reproduce the bug/issue, this query takes two specific turns using their serial numbers provided in the debug logs. It when then UPDATE the database to alternate between the two provided turns. 
 
 ```sql
 
