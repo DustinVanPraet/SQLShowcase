@@ -1,7 +1,9 @@
 #### During QA Testing, some bugs/issues can come from two turns being played in tandem. So it's safe practice to test the previous event as well as the expected crash event. In order to reproduce the bug/issue, this query takes two specific turns using their serial numbers provided in the debug logs. It then UPDATEs the database to alternate between the two provided turns. 
 
-#### Before Input:
+#### Scenario:
+A member from QA is having issues with two specific tickets. A bug is occurring when multiplier 26x is followed by a 2x ticket. This bug can't be reproduced every time so the QA team will need to play the same turns over and over again on a live environment. The QA team wants the two tickets to repeat 20 times.
 
+#### Before Input:
 ![AltTurnsBeforeOutput](https://github.com/user-attachments/assets/98538d5b-642e-4dc2-ae39-1c394f11b602)
 
 #### Input:
@@ -21,12 +23,12 @@ DECLARE @numberOfCycles	   INT;
 --The following 6 variables are all that you change. You only need the pulltabID's or the S/N's but
 --you don't need both. 
 
-SET @gamesetID		  = 663;     --Gameset that you're going to be updating
+SET @gamesetID		  = 1515;     --Gameset that you're going to be updating
 SET @1stALTpulltabID	  = 16598014 --PulltabID you want to alternate
 SET @2ndALTpulltabID	  = 16597992 --2nd PulltabID you want to alternate
 SET @1stSerialNumber      = ''	     --Serial_number you want to alternate	
 SET @2ndSerialNumber      = ''	     --2nd Serial_number you want to alternate	
-SET @numberOfCycles       = 50	     --Number of times you want the turns to be repeated
+SET @numberOfCycles       = 10	     --Number of times you want the turns to be repeated
 
 
 SET @1stpulltabIDstart = (	SELECT	TOP(1) pulltab_id
@@ -41,7 +43,7 @@ SET @2ndPulltabIDstart = (	SELECT	TOP 1 (SELECT TOP(1) pulltab_id
 			        FROM pulltab_tickets
 			  )
 
-WHILE @cnt < @numberOfCycles * 2 -- Change to the number of times you want turns to be repeated.   
+WHILE @cnt < @numberOfCycles * 2 -- Controls the number of times you want turns to be repeated.   
 
 	BEGIN	
 		UPDATE	pulltab_tickets
