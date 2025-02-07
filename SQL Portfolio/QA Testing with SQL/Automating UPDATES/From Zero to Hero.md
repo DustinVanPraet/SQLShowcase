@@ -48,7 +48,19 @@ GROUP BY	gameset.gameset_id,
 <br>
 The database analyst would then manually search for the gameset_id that aligned with the denomination and name that they were looking for. This would be gameset_id 1482.
 The next step would be to search for a win_amount containing 10x for $1.00 denomination which would be 10.00. The next query would be written to find this information.
+
+Eventually I added a column to the active gamesets and an ORDER BY
+#### Input:
+```sql
+(SELECT COUNT(*)
+        FROM pulltab_tickets
+        WHERE pulltab_tickets.gameset_id = gameset.gameset_id
+        AND pulltab_tickets.has_been_played = 0) 
+						AS TicketsAvailable
+ORDER BY name, denomination
+```
 <br>
+
 #### Input:
 ```sql
 SELECT	*
