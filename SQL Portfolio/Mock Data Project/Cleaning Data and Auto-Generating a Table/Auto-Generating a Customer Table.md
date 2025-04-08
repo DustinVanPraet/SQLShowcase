@@ -9,11 +9,11 @@ DECLARE @recordsToMake INT = 1000;
 
 -- Fix Gender descriptions
 update FirstNames
-set		sex = 'M'
+set	sex = 'M'
 where	sex = 'boy';
 
 update	FirstNames
-set		sex = 'F'
+set	sex = 'F'
 where	sex = 'girl';
 
 --Clean data by converting percent column cells that are displayed as Scientific Notation
