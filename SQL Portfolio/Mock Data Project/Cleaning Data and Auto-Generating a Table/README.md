@@ -1,6 +1,6 @@
 # This project Auto-Generates a simple customer table using 2 files 
 
-#### One file has first names and one has last names. We clean both files removing any unnecessary information and run a WHILE loop that creates a customer table based on the counter number that was chosen. Each iteration of the loop will generate:
+### One file has first names and one has last names. We clean both files removing any unnecessary information and run a WHILE loop that creates a customer table based on the counter number that was chosen. Each iteration of the loop will generate:
 <b>FirstName</b> - Random first name from FirstName table
 <br>
 <b>LastName</b> - Random last name from LastName table
