@@ -1,14 +1,3 @@
-# This project Auto-Generates a simple customer table using 2 files 
-
-#### One file has first names and one has last names. We clean both files removing any unnecessary information and run a WHILE loop that creates a customer table based on the counter number that was chosen. Each iteration of the loop will generate a:
-FirstName
-LastName
-MiddleInitial - Random first letter based off all names in the first names list.
-Gender - based off random FirstName chosen.
-Age - Random number between 18 and 100 years old.
-Email - Uses first and last name and a 50% chance to choose between 2 email domains. 
-
-
 #### In a new database, import FirstNames.txt and LastNames.txt as flat files. After importing files, running the script below will generate a customer table. 
 ```sql
 --Run this after importing flat table files to auto generate a customers table.
