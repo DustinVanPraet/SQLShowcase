@@ -9,11 +9,11 @@ DECLARE @recordsToMake INT = 1000;
 
 -- Fix Gender descriptions
 update FirstNames
-set	sex = 'M'
+set		sex = 'M'
 where	sex = 'boy';
 
 update	FirstNames
-set	sex = 'F'
+set		sex = 'F'
 where	sex = 'girl';
 
 --Clean data by converting percent column cells that are displayed as Scientific Notation
@@ -53,7 +53,7 @@ AS
 --Rename new table to reflect old table. 
 	EXEC sp_rename 'newFirstNames', 'FirstNames';
 
---Minimize LastNames into a smaller table. Eliminates very rare names. 
+--Minimize LastNames into a smaller table 
 SELECT TOP(10000)
 	LastNames.name
 INTO LastNamesOnly
@@ -109,7 +109,10 @@ WHILE @counter < @recordsToMake
 			(SELECT TOP 1 name FROM LastNames ORDER BY NEWID()) AS LastName,
 			(SELECT TOP 1 LEFT(name,1) FROM FirstNames ORDER BY NEWID()) AS MiddleInitial,
 			(SELECT FLOOR(18 + RAND() * (75 - 18 + 1))),
-			CONCAT(FirstNames.name, FLOOR(RAND() * 10), FLOOR(RAND() * 10), FLOOR(RAND() * 10), '@gmail.com')
+			CONCAT(FirstNames.name, FLOOR(RAND() * 10), FLOOR(RAND() * 10), FLOOR(RAND() * 10),
+				CASE 	WHEN RAND() > .5 THEN '@gmail.com'
+				ELSE '@yahoo.com'
+				END)
 		FROM 
 			(SELECT TOP 1 name, sex FROM FirstNames ORDER BY NEWID()) AS FirstNames;
 
@@ -118,5 +121,4 @@ WHILE @counter < @recordsToMake
 	END
 
 SELECT *
-FROM	Customers;
-```
+FROM	Customers;```
