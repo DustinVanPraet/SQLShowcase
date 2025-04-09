@@ -9,5 +9,5 @@ simply used to showcase SQL skills working alongside Quality Assurance for testi
 #### Project Times
 | Project | Time | Notes |
 |----|----|----------------------|
-| From Zero to Hero | 1 month | First SQL project |
+| Improving Testing Practices | 1 month | First SQL project |
 | Alternating Tickets UPDATE | 1 hour | Most Recent SQL script written |
