@@ -97,4 +97,8 @@ from GroceryInv
 
 UPDATE	GroceryInv
 SET		[percentage] = CAST(REPLACE([percentage],'%', '') AS DECIMAL(5,2)) / 100
+
+
+ALTER TABLE	GroceryInv
+ALTER COLUMN	[percentage] DECIMAL(5,2)
 ```
